@@ -3,7 +3,7 @@
 ## Overview 
 
 op-node 是整个 op 系统中非常核心的一个模块，它是整个系统的控制层，控制 op-geth 的执行。
-op-geth 的元数据（UnSafe/Safe/Finalized） 都是 op-node 下发，不会自己更新，今儿也就控制了 op-geth 的数据流。
+op-geth 的元数据（UnSafe/Safe/Finalized） 都是 op-node 下发，不会自己更新，进而也就控制了 op-geth 的数据流。
 
 这部分要想理解好，主要分以下几个部分：
 1. 基础层：[Client](./1_op_node_clients.md) 介绍了 op-node 使用了哪些 L1 和 L2 接口，并在基础之上对客户端做了哪些包装。
