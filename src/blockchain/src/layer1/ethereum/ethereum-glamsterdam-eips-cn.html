@@ -1,0 +1,2010 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Ethereum Glamsterdam EIP 研究笔记</title>
+  <style>
+    :root {
+      --page: #f4f6f5;
+      --surface: #ffffff;
+      --surface-muted: #eef2f0;
+      --ink: #19231f;
+      --muted: #5d6963;
+      --line: #d8dfdb;
+      --line-strong: #b8c4be;
+      --core: #087f5b;
+      --core-soft: #e3f5ee;
+      --network: #a45b00;
+      --network-soft: #fff0d8;
+      --info: #315f9c;
+      --info-soft: #e8f0fb;
+      --headliner: #9b334f;
+      --headliner-soft: #f9e8ee;
+      --focus: #155bd5;
+      --radius: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 110px;
+    }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 15px;
+      line-height: 1.68;
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    button,
+    input {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    button,
+    summary,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :focus-visible {
+      outline: 3px solid rgba(21, 91, 213, 0.28);
+      outline-offset: 2px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar-inner {
+      width: min(1440px, calc(100% - 40px));
+      min-height: 64px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .brand strong {
+      font-size: 18px;
+      line-height: 1.3;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .top-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 0 0 auto;
+    }
+
+    .top-links a,
+    .source-link {
+      text-decoration: none;
+      color: #214f86;
+      font-weight: 650;
+    }
+
+    .top-links a:hover,
+    .source-link:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .layout {
+      width: min(1440px, calc(100% - 40px));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 34px;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 88px;
+      max-height: calc(100vh - 112px);
+      overflow: auto;
+      padding: 28px 4px 40px 0;
+      scrollbar-width: thin;
+    }
+
+    .sidebar h2 {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    .nav-group + .nav-group {
+      margin-top: 20px;
+    }
+
+    .nav-group-title {
+      margin: 0 0 6px;
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .eip-nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .eip-nav li {
+      margin: 1px 0;
+    }
+
+    .eip-nav a {
+      display: block;
+      padding: 5px 8px;
+      border-left: 2px solid transparent;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .eip-nav a:hover {
+      border-left-color: var(--line-strong);
+      background: var(--surface-muted);
+      color: var(--ink);
+    }
+
+    main {
+      min-width: 0;
+      padding: 38px 0 72px;
+    }
+
+    .intro {
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--headliner);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 900px;
+      font-size: 34px;
+      line-height: 1.22;
+      font-weight: 780;
+    }
+
+    .intro-copy {
+      max-width: 860px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .status-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 22px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status-line strong {
+      color: var(--ink);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-top: 26px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .metric {
+      padding: 16px 18px;
+    }
+
+    .metric + .metric {
+      border-left: 1px solid var(--line);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .section-title {
+      margin: 34px 0 14px;
+      font-size: 20px;
+      line-height: 1.35;
+    }
+
+    .headliners {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .headliner-card {
+      position: relative;
+      min-height: 168px;
+      padding: 20px;
+      border: 1px solid #ddb8c4;
+      border-radius: var(--radius);
+      background: var(--headliner-soft);
+    }
+
+    .headliner-card .number {
+      color: var(--headliner);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .headliner-card h3 {
+      margin: 7px 0 8px;
+      font-size: 19px;
+      line-height: 1.35;
+    }
+
+    .headliner-card p {
+      margin: 0;
+      color: #654652;
+    }
+
+    .headliner-card a {
+      display: inline-block;
+      margin-top: 12px;
+      color: #7e2942;
+      font-weight: 720;
+      text-decoration: none;
+    }
+
+    .headliner-card a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .controls {
+      position: sticky;
+      top: 64px;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto auto;
+      gap: 12px;
+      align-items: center;
+      margin: 34px 0 18px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+    }
+
+    .search-wrap {
+      min-width: 0;
+    }
+
+    .search-wrap label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    #search {
+      width: 100%;
+      height: 38px;
+      padding: 0 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    #search::placeholder {
+      color: #7d8983;
+    }
+
+    .segments,
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .segments button,
+    .actions button {
+      height: 36px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .segments button:hover,
+    .actions button:hover {
+      border-color: var(--line-strong);
+      color: var(--ink);
+    }
+
+    .segments button[aria-pressed="true"] {
+      border-color: #22372e;
+      background: #22372e;
+      color: #fff;
+    }
+
+    .result-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .result-line strong {
+      color: var(--ink);
+    }
+
+    .category-section {
+      margin-top: 26px;
+    }
+
+    .category-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--line-strong);
+    }
+
+    .category-heading h2 {
+      margin: 0;
+      font-size: 19px;
+    }
+
+    .category-heading span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .eip-card {
+      margin: 10px 0;
+      border: 1px solid var(--line);
+      border-left-width: 4px;
+      border-radius: var(--radius);
+      background: var(--surface);
+      scroll-margin-top: 150px;
+    }
+
+    .eip-card[data-category="core"] {
+      border-left-color: var(--core);
+    }
+
+    .eip-card[data-category="network"] {
+      border-left-color: var(--network);
+    }
+
+    .eip-card[data-category="info"] {
+      border-left-color: var(--info);
+    }
+
+    .eip-card[open] {
+      border-color: var(--line-strong);
+      border-left-color: var(--card-color);
+    }
+
+    .eip-card summary {
+      position: relative;
+      list-style: none;
+      display: grid;
+      grid-template-columns: 108px minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      min-height: 94px;
+      padding: 14px 50px 14px 18px;
+      cursor: pointer;
+    }
+
+    .eip-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .eip-card summary::after {
+      content: "+";
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      width: 24px;
+      height: 24px;
+      margin-top: -12px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .eip-card[open] summary::after {
+      content: "−";
+    }
+
+    .eip-number {
+      font-size: 15px;
+      font-weight: 820;
+      color: var(--card-color);
+    }
+
+    .eip-title-wrap {
+      min-width: 0;
+    }
+
+    .eip-title-wrap h3 {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.4;
+    }
+
+    .eip-title-wrap p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      max-width: 180px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 760;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .badge-core {
+      color: #075d45;
+      background: var(--core-soft);
+    }
+
+    .badge-network {
+      color: #7c4700;
+      background: var(--network-soft);
+    }
+
+    .badge-info {
+      color: #294f80;
+      background: var(--info-soft);
+    }
+
+    .badge-headliner {
+      color: #7f2942;
+      background: var(--headliner-soft);
+    }
+
+    .eip-body {
+      padding: 0 18px 19px 142px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px 28px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .detail-block h4 {
+      margin: 0 0 6px;
+      color: var(--card-color);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .detail-block p {
+      margin: 0;
+      color: #37433e;
+    }
+
+    .detail-block.full {
+      grid-column: 1 / -1;
+    }
+
+    .analysis-block {
+      padding-top: 18px;
+      border-top: 1px dashed var(--line-strong);
+    }
+
+    .analysis-block > h4 {
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    .analysis-block h5 {
+      margin: 20px 0 7px;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .analysis-block h5:first-of-type {
+      margin-top: 12px;
+    }
+
+    .analysis-block p + p {
+      margin-top: 8px;
+    }
+
+    .analysis-block ol,
+    .analysis-block ul {
+      margin: 8px 0 0;
+      padding-left: 22px;
+      color: #37433e;
+    }
+
+    .analysis-block li + li {
+      margin-top: 8px;
+    }
+
+    .analysis-formula {
+      margin: 10px 0 0;
+      padding: 10px 12px;
+      border-left: 3px solid var(--card-color);
+      background: var(--surface-muted);
+      color: #29332f;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.65;
+      overflow-wrap: anywhere;
+    }
+
+    .analysis-table-wrap {
+      margin-top: 10px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .analysis-table {
+      width: 100%;
+      min-width: 940px;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .analysis-table th,
+    .analysis-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .analysis-table th {
+      background: var(--surface-muted);
+      color: var(--ink);
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .analysis-table th:nth-child(3),
+    .analysis-table th:nth-child(4),
+    .analysis-table th:nth-child(5),
+    .analysis-table td:nth-child(3),
+    .analysis-table td:nth-child(4),
+    .analysis-table td:nth-child(5) {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .analysis-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .example-list {
+      margin: 8px 0 0;
+    }
+
+    .example-list dt {
+      margin-top: 13px;
+      color: var(--ink);
+      font-weight: 750;
+    }
+
+    .example-list dd {
+      margin: 3px 0 0;
+      color: #37433e;
+    }
+
+    code {
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: #edf1ef;
+      color: #29332f;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.91em;
+      overflow-wrap: anywhere;
+    }
+
+    .eip-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px 18px;
+      margin-top: 17px;
+      padding-top: 13px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .keywords {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+    }
+
+    .keywords span::before {
+      content: "#";
+      color: var(--card-color);
+    }
+
+    .empty-state {
+      display: none;
+      padding: 48px 20px;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .appendix-category {
+      margin-top: 48px;
+    }
+
+    .appendix-card {
+      --card-color: var(--info);
+      border-left-color: var(--info);
+    }
+
+    .appendix-section {
+      padding: 21px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .appendix-section h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      line-height: 1.4;
+    }
+
+    .appendix-section p {
+      max-width: 980px;
+      margin: 8px 0 0;
+      color: #37433e;
+    }
+
+    .appendix-section ul {
+      margin: 9px 0 0;
+      padding-left: 22px;
+      color: #37433e;
+    }
+
+    .appendix-section li + li {
+      margin-top: 7px;
+    }
+
+    .appendix-definitions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 28px;
+      margin: 10px 0 0;
+    }
+
+    .appendix-definitions div {
+      padding: 10px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .appendix-definitions dt {
+      color: var(--ink);
+      font-weight: 760;
+    }
+
+    .appendix-definitions dd {
+      margin: 3px 0 0;
+      color: #37433e;
+    }
+
+    .appendix-sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px 18px;
+      margin-top: 14px;
+      font-size: 13px;
+    }
+
+    .footnote {
+      margin-top: 34px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line-strong);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footnote p {
+      margin: 5px 0;
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 24px;
+      }
+
+      .controls {
+        grid-template-columns: minmax(220px, 1fr) auto;
+      }
+
+      .actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+      }
+
+      .eip-card summary {
+        grid-template-columns: 88px minmax(0, 1fr);
+      }
+
+      .badges {
+        grid-column: 2;
+        justify-content: flex-start;
+        max-width: none;
+      }
+
+      .eip-body {
+        padding-left: 122px;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .topbar-inner,
+      .layout {
+        width: min(100% - 28px, 760px);
+      }
+
+      .top-links {
+        display: none;
+      }
+
+      .layout {
+        display: block;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      main {
+        padding-top: 26px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .metric:nth-child(3) {
+        border-left: 0;
+      }
+
+      .metric:nth-child(n+3) {
+        border-top: 1px solid var(--line);
+      }
+
+      .headliners {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        position: static;
+        grid-template-columns: 1fr;
+      }
+
+      .segments {
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+
+      .actions {
+        grid-column: auto;
+        justify-content: flex-start;
+      }
+
+      .eip-card summary {
+        grid-template-columns: 1fr;
+        gap: 5px;
+        padding-right: 48px;
+      }
+
+      .badges {
+        grid-column: auto;
+      }
+
+      .eip-body {
+        padding: 0 18px 18px;
+      }
+
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-block.full {
+        grid-column: auto;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .brand span {
+        display: none;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .metric + .metric,
+      .metric:nth-child(3) {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .appendix-definitions {
+        grid-template-columns: 1fr;
+      }
+
+      .category-heading {
+        display: block;
+      }
+
+      .category-heading span {
+        display: block;
+        margin-top: 2px;
+      }
+    }
+
+    @media print {
+      .topbar,
+      .sidebar,
+      .controls,
+      .actions {
+        display: none !important;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .layout {
+        display: block;
+        width: 100%;
+      }
+
+      main {
+        padding: 0;
+      }
+
+      .eip-card {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <strong>Glamsterdam EIP 研究笔记</strong>
+        <span>Ethereum Protocol Upgrade</span>
+      </div>
+      <nav class="top-links" aria-label="外部资料">
+        <a href="https://eips.ethereum.org/EIPS/eip-7773" target="_blank" rel="noreferrer">Meta EIP-7773</a>
+        <a href="https://forkcast.org/upgrade/glamsterdam/" target="_blank" rel="noreferrer">Forkcast</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="EIP 目录">
+      <h2>目录</h2>
+      <div id="sidebar-nav"></div>
+    </aside>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">Ethereum Glamsterdam</p>
+        <h1 id="page-title">EIP 全景与研究索引</h1>
+        <p class="intro-copy">
+          按 EIP-7773 当前清单整理。每项先记录概要、提案中的核心动机与主要做法，后续深入研究直接追加在对应 EIP 下。
+        </p>
+        <div class="status-line">
+          <span><strong>Meta 状态：</strong>Review</span>
+          <span><strong>清单口径：</strong>18 项 Scheduled，7 项 Other EIPs</span>
+          <span><strong>Sepolia：</strong>Epoch 353024，2026-10-06 13:53:36 UTC</span>
+          <span><strong>Hoodi / Mainnet：</strong>待公布</span>
+          <span><strong>核对日期：</strong>2026-10-09</span>
+        </div>
+        <div class="metrics" aria-label="EIP 数量概览">
+          <div class="metric"><strong>18</strong><span>Scheduled 核心协议 EIP</span></div>
+          <div class="metric"><strong>5</strong><span>Other · 配套网络协议</span></div>
+          <div class="metric"><strong>2</strong><span>Other · 信息类 EIP</span></div>
+          <div class="metric"><strong>25</strong><span>本页收录总数</span></div>
+        </div>
+      </section>
+
+      <h2 class="section-title">两项 Headliner</h2>
+      <section class="headliners" aria-label="Glamsterdam headliner EIP">
+        <article class="headliner-card">
+          <span class="number">EIP-7732 · ePBS</span>
+          <h3>把 proposer 与 builder 的交换正式纳入协议</h3>
+          <p>区块先承诺 payload bid，builder 随后揭示执行载荷；支付、及时性证明与延迟执行验证都由协议定义。</p>
+          <a href="#eip-7732">查看条目</a>
+        </article>
+        <article class="headliner-card">
+          <span class="number">EIP-7928 · BAL</span>
+          <h3>把一个区块访问过的状态及结果做成可验证数据</h3>
+          <p>为并行磁盘读取、并行交易验证、并行状态根计算和无需重放交易的状态更新提供基础。</p>
+          <a href="#eip-7928">查看条目</a>
+        </article>
+      </section>
+
+      <section class="controls" aria-label="筛选与展开控制">
+        <div class="search-wrap">
+          <label for="search">搜索 EIP</label>
+          <input id="search" type="search" placeholder="搜索编号、标题、问题或关键词" autocomplete="off">
+        </div>
+        <div class="segments" role="group" aria-label="按类别筛选">
+          <button type="button" data-filter="all" aria-pressed="true">全部</button>
+          <button type="button" data-filter="core" aria-pressed="false">核心协议</button>
+          <button type="button" data-filter="network" aria-pressed="false">网络协议</button>
+          <button type="button" data-filter="info" aria-pressed="false">信息类</button>
+        </div>
+        <div class="actions">
+          <button id="expand-all" type="button">全部展开</button>
+          <button id="collapse-all" type="button">全部收起</button>
+        </div>
+      </section>
+
+      <div class="result-line">
+        <span>当前显示 <strong id="result-count">25</strong> 项</span>
+        <span>清单来源：EIP-7773</span>
+      </div>
+
+      <div id="eip-list"></div>
+      <div id="empty-state" class="empty-state">没有找到匹配的 EIP。</div>
+
+      <section class="category-section appendix-category" aria-labelledby="appendix-heading">
+        <div class="category-heading">
+          <h2 id="appendix-heading">附录</h2>
+          <span>跨 EIP 的组合规则、公式与参数速查</span>
+        </div>
+        <div class="category-items">
+          <details class="eip-card appendix-card" id="appendix-1">
+            <summary>
+              <div class="eip-number">附录 1</div>
+              <div class="eip-title-wrap">
+                <h3>GasUsed 计算</h3>
+                <p>区分 intrinsic gas、正常执行结算以及 calldata/access-list 最低地板。</p>
+              </div>
+              <div class="badges">
+                <span class="badge badge-info">Gas 计量</span>
+              </div>
+            </summary>
+            <div class="eip-body">
+
+        <section class="appendix-section" aria-labelledby="appendix-formula">
+          <h3 id="appendix-formula">一、总公式</h3>
+          <div class="analysis-formula">intrinsic_gas = B + 4Z + 16N + access_list_access_cost + access_list_data_cost + authorization_cost + initcode_word_cost</div>
+          <div class="analysis-formula">正常账单（refund 前）= intrinsic_gas + X<br>正常 gasUsed = 正常账单 - refund<br><br>最低地板 = B + 64 × (Z + N) + access_list_data_cost<br>最终 gasUsed = max(正常 gasUsed, 最低地板)</div>
+          <p><code>intrinsic_gas</code> 是不读取链上状态即可根据交易字段确定的最低执行前成本；有效交易在进入 EVM 前先从 gas budget 中扣除它。<code>X</code> 是随后实际发生的 pre-execution runtime、EVM opcode、state gas、initcode 执行和代码存储等消耗。最终 <code>gasUsed</code> 用于交易收据与手续费结算。</p>
+          <p><strong>创建成本的位置：</strong>EIP-2780 生效后，顶层 contract-creation transaction 的固定创建访问成本已经包含在 <code>B</code> 中，不再额外叠加旧规则的 <code>32,000 gas</code>。只有创建交易才有的 <code>initcode_word_cost</code> 仍单独属于 intrinsic gas。</p>
+        </section>
+
+        <section class="appendix-section" aria-labelledby="appendix-variables">
+          <h3 id="appendix-variables">二、符号含义</h3>
+          <dl class="appendix-definitions">
+            <div>
+              <dt><code>B</code>：交易基础形状成本</dt>
+              <dd><code>12,000 + recipient_component + value_component</code>。它是正常账单与最低地板共有的 base，不等于“全部 intrinsic gas 减去 calldata”。</dd>
+            </div>
+            <div>
+              <dt><code>Z / N</code>：calldata 字节数</dt>
+              <dd><code>Z</code> 为零字节数量，<code>N</code> 为非零字节数量。标准 intrinsic 成本为 <code>4Z + 16N</code>，EIP-7976 floor 为统一的 <code>64 × (Z + N)</code>。</dd>
+            </div>
+            <div>
+              <dt><code>A / K</code>：Access List 条目数</dt>
+              <dd><code>A</code> 为 address 数量，<code>K</code> 为 storage key 数量；两者同时产生状态访问预付费和 EIP-7981 数据体积费。</dd>
+            </div>
+            <div>
+              <dt><code>H</code>：authorization 数量</dt>
+              <dd>EIP-7702 authorization tuple 的数量。每个 tuple 的固定 intrinsic 成本都会收费，不取决于它后续是否通过状态相关检查。</dd>
+            </div>
+            <div>
+              <dt><code>X</code>：实际 runtime 消耗</dt>
+              <dd>包含 pre-execution runtime charge、普通 EVM 执行、state gas、initcode 执行及 runtime code deposit；只对实际发生的工作收费。</dd>
+            </div>
+            <div>
+              <dt><code>refund</code>：最终退款</dt>
+              <dd>按 EIP-3529 受 refund counter 和已用 gas 的 1/5 上限约束；应用 refund 后，最终收费仍不能低于最低地板。</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="appendix-section" aria-labelledby="appendix-base">
+          <h3 id="appendix-base">三、B 的计算</h3>
+          <div class="analysis-formula">B = TX_BASE_COST 12,000 + recipient_component + value_component</div>
+          <ul>
+            <li><strong>self-transfer：</strong><code>recipient_component = 0</code>，非零 value 也不额外收费，所以 <code>B = 12,000</code>。</li>
+            <li><strong>普通目标地址：</strong><code>recipient_component = COLD_ACCOUNT_ACCESS = 3,000</code>；若向不同地址转移非零 ETH，再加 <code>TX_VALUE_COST = 6,000</code>，因此零 value 为 15,000，非零 value 为 21,000。</li>
+            <li><strong>顶层创建交易：</strong><code>recipient_component = CREATE_ACCESS = 12,000</code>，不因 <code>tx.value</code> 再收费，因此 <code>B = 24,000</code>。</li>
+          </ul>
+          <p>Authorization、access list、initcode word 与依赖链上状态的 runtime charge 均不属于 <code>B</code>。</p>
+        </section>
+
+        <section class="appendix-section" aria-labelledby="appendix-access-list">
+          <h3 id="appendix-access-list">四、Access List 成本</h3>
+          <p>在完整 Glamsterdam 组合中，EIP-8038 先调整状态访问预付费，EIP-7981 再按数据体积叠加 64 gas/byte：</p>
+          <div class="analysis-formula">access_list_access_cost = 2,900A + 2,000K<br>access_list_data_cost = 1,280A + 2,048K = 64 × (20A + 32K)<br><br>access_list 总 intrinsic 成本 = 4,180A + 4,048K</div>
+          <p>其中 <code>access_list_access_cost</code> 为账户/storage slot 的状态访问和预热付费；<code>access_list_data_cost</code> 为 address 的 20 bytes 与 storage key 的 32 bytes 支付区块数据成本。后者同时出现在正常账单和最低地板中，不能再被用于绕过 calldata floor。</p>
+          <p>若只孤立看 EIP-7981、尚未叠加 EIP-8038，则原状态访问基线是 address <code>2,400</code>、storage key <code>1,900</code>；本文按 Glamsterdam 最终组合参数使用 <code>2,900/2,000</code>。</p>
+        </section>
+
+        <section class="appendix-section" aria-labelledby="appendix-authorization">
+          <h3 id="appendix-authorization">五、Authorization 成本</h3>
+          <div class="analysis-formula">authorization_cost = 7,816 × H execution gas</div>
+          <p><code>7,816</code> 是每个 EIP-7702 authorization 的 state-independent intrinsic 成本，覆盖 tuple 数据、authority 签名恢复、固定 cold authority access 和基础 warm writes。它替代旧 EIP-7702 每项预留 <code>25,000 gas</code>、随后可能退款的模型。</p>
+          <p>通过状态检查的 authorization 还可能在 runtime 阶段产生以下费用，这些费用计入 <code>X</code>，而不是 intrinsic gas：</p>
+          <ul>
+            <li>authority 在本交易中的第一次未覆盖写入：<code>ACCOUNT_WRITE = 9,000 execution gas</code>。</li>
+            <li>authority 账户原本不存在：<code>120 × 1,530 = 183,600 state gas</code>。</li>
+            <li>首次新增 23-byte delegation indicator：<code>23 × 1,530 = 35,190 state gas</code>。</li>
+          </ul>
+        </section>
+
+        <section class="appendix-section" aria-labelledby="appendix-create">
+          <h3 id="appendix-create">六、Contract Creation 与 Initcode</h3>
+          <div class="analysis-formula">顶层创建交易的 B = 12,000 + 12,000 = 24,000 execution gas<br>initcode_word_cost = 2 × ceil(initcode_length / 32) execution gas</div>
+          <ul>
+            <li><strong>Initcode 本身：</strong>创建交易的 <code>tx.data</code> 就是 initcode，因此仍按 <code>4Z + 16N</code> 计入正常 intrinsic，并按 <code>64 × (Z + N)</code> 参与 EIP-7976 floor。</li>
+            <li><strong>新 deployment account：</strong>目标地址不存在时，在 runtime 阶段收取 <code>120 × 1,530 = 183,600 state gas</code>；目标已有 state leaf 时不收。</li>
+            <li><strong>执行 initcode：</strong>构造函数执行消耗计入 <code>X</code>，不是固定 intrinsic 成本。</li>
+            <li><strong>存储 runtime code：</strong>Amsterdam 下收取 <code>6 × ceil(runtime_code_length / 32)</code> execution gas 作为 hash 成本，并收取 <code>1,530 × runtime_code_length</code> state gas 作为 code deposit。</li>
+            <li><strong>内部 CREATE/CREATE2：</strong>固定创建访问成本为 <code>12,000 execution gas</code>；两者都加 <code>2 gas/word</code> initcode 分析费，<code>CREATE2</code> 还加 <code>6 gas/word</code> 地址哈希费，其余新账户与代码存储费用与上面相同。</li>
+          </ul>
+        </section>
+
+        <section class="appendix-section" aria-labelledby="appendix-settlement">
+          <h3 id="appendix-settlement">七、有效性与最终结算</h3>
+          <div class="analysis-formula">交易有效性要求：tx.gasLimit ≥ max(intrinsic_gas, 最低地板)<br>正常 gasUsed = gasUsedBeforeRefund - refund<br>最终 gasUsed = max(正常 gasUsed, 最低地板)<br>实际手续费 = 最终 gasUsed × effectiveGasPrice</div>
+          <p>一笔已被接受的交易即使随后 <code>REVERT</code> 或执行失败，intrinsic gas 仍然已经消耗；未使用的 runtime gas 会返还。EIP-7778 对区块 gas 容量采用不扣 refund 的口径，与这里用于 receipt 和手续费的最终标量 <code>gasUsed</code> 是不同层面的记账。</p>
+        </section>
+
+        <section class="appendix-section" aria-labelledby="appendix-effective-gas-price">
+          <h3 id="appendix-effective-gas-price">八、effectiveGasPrice</h3>
+          <p><code>effectiveGasPrice</code> 是交易被区块包含后，用户实际为每单位 execution/state gas 支付的价格。对 EIP-1559 动态费用交易：</p>
+          <div class="analysis-formula">effectiveGasPrice = min(<br>&nbsp;&nbsp;maxFeePerGas,<br>&nbsp;&nbsp;block.baseFeePerGas + maxPriorityFeePerGas<br>)</div>
+          <p>交易在当前区块可被包含，至少需要满足：</p>
+          <div class="analysis-formula">maxFeePerGas ≥ block.baseFeePerGas<br>maxFeePerGas ≥ maxPriorityFeePerGas</div>
+          <p>否则交易当前不能被该区块包含，需要等待 base fee 降低，或者通过 replacement transaction 提高费用上限。</p>
+          <dl class="appendix-definitions">
+            <div>
+              <dt><code>baseFeePerGas</code></dt>
+              <dd>当前区块规定的基础费用，由协议根据上一个区块的拥塞程度计算，用户不能指定，最终被 burn。</dd>
+            </div>
+            <div>
+              <dt><code>maxPriorityFeePerGas</code></dt>
+              <dd>用户愿意支付给 proposer 的最高小费；实际小费还会受到 <code>maxFeePerGas - baseFeePerGas</code> 的限制。</dd>
+            </div>
+            <div>
+              <dt><code>maxFeePerGas</code></dt>
+              <dd>用户愿意支付的总 gas 单价上限，包含 base fee 和 priority fee；它是价格上限，不是必然支付的价格。</dd>
+            </div>
+          </dl>
+          <div class="analysis-formula">实际 priorityFeePerGas = effectiveGasPrice - block.baseFeePerGas<br><br>Burn = gasUsed × block.baseFeePerGas<br>Proposer 收入 = gasUsed × 实际 priorityFeePerGas</div>
+          <div class="appendix-sources" aria-label="附录资料来源">
+            <a class="source-link" href="https://eips.ethereum.org/EIPS/eip-2780" target="_blank" rel="noreferrer">EIP-2780</a>
+            <a class="source-link" href="https://eips.ethereum.org/EIPS/eip-3860" target="_blank" rel="noreferrer">EIP-3860</a>
+            <a class="source-link" href="https://eips.ethereum.org/EIPS/eip-7702" target="_blank" rel="noreferrer">EIP-7702</a>
+            <a class="source-link" href="https://eips.ethereum.org/EIPS/eip-1559" target="_blank" rel="noreferrer">EIP-1559</a>
+            <a class="source-link" href="https://eips.ethereum.org/EIPS/eip-7976" target="_blank" rel="noreferrer">EIP-7976</a>
+            <a class="source-link" href="https://eips.ethereum.org/EIPS/eip-7981" target="_blank" rel="noreferrer">EIP-7981</a>
+            <a class="source-link" href="https://eips.ethereum.org/EIPS/eip-8037" target="_blank" rel="noreferrer">EIP-8037</a>
+            <a class="source-link" href="https://eips.ethereum.org/EIPS/eip-8038" target="_blank" rel="noreferrer">EIP-8038</a>
+          </div>
+        </section>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <footer class="footnote">
+        <p><strong>范围说明：</strong>EIP-7773 把 18 项核心协议列为 “Scheduled for Inclusion”，并把 5 项网络协议与 2 项信息类提案列在 “Other EIPs”。Scheduled 表示已进入当前升级目标范围，不等同于内容永远不再变化；在主网激活前，规范、参数与激活安排仍可能更新。</p>
+        <p><strong>编辑约定：</strong>后续深挖内容按 EIP 编号追加在对应条目内，基础概要继续保留，方便区分“规范概览”和“研究笔记”。</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const categoryMeta = {
+      core: { label: "核心协议 EIP", short: "核心协议", color: "#087f5b", description: "改变执行层或共识层规则，需要随网络升级激活" },
+      network: { label: "配套网络协议 EIP", short: "网络协议", color: "#a45b00", description: "为新能力提供节点间传播、同步或数据可用性支持" },
+      info: { label: "信息类 EIP", short: "信息类", color: "#315f9c", description: "记录分析、建议或协调方式，本身不直接改变共识规则" }
+    };
+
+    const eips = [
+      {
+        id: "2780",
+        category: "core",
+        title: "Resource-based intrinsic transaction gas",
+        titleZh: "按资源消耗重构交易 intrinsic gas",
+        brief: "把固定的 21,000 intrinsic gas 拆成发送方、接收方访问、价值转移等资源原语，并区分 state-independent intrinsic gas 与 state-dependent runtime gas。",
+        problem: "固定 21,000 对最简单交易定价过高，却对创建新账户、状态写入和转账日志等持久资源消耗定价不足；相关成本也难以随底层资源重定价而组合更新。",
+        approach: "引入 `TX_BASE_COST = 12,000`、接收方冷访问 `3,000`、非零价值转移 `6,000` 等组成项。向已有 EOA 转账仍为 21,000 execution gas；创建新账户等依赖链上状态的费用改在执行前运行阶段收取，耗尽时交易仍有效但跳过执行并回滚前置状态变化。",
+        analysis: `
+          <p><strong>计量口径：</strong>EIP-2780 新拆出的“交易形状成本”有 4 类。如果计算完整 <code>intrinsic_gas</code>，还要叠加 calldata、access list 和 contract creation 的 initcode word 成本。创建新账户、delegation resolution 等依赖链上状态的费用不再参与交易有效性检查，而是在交易已被接受后作为 runtime gas 收取。</p>
+
+          <h5>一、4 类交易形状成本</h5>
+          <div class="analysis-formula">transaction_shape_gas = sender_cost + recipient_cost + value_cost + authorization_cost</div>
+          <ol>
+            <li><strong>发送方成本：</strong>每笔交易固定收取 <code>TX_BASE_COST = 12,000</code> execution gas，覆盖签名恢复、sender 账户访问与写入，以及交易被包含进区块的基础工作。</li>
+            <li><strong>接收方成本：</strong>self-transfer 不重复收费；<code>to == nil</code> 的创建交易收取 <code>CREATE_ACCESS = 12,000</code>；其他目标地址固定收取 <code>COLD_ACCOUNT_ACCESS = 3,000</code>。这里即使 access list 已预热目标，也仍按 cold rate 收取，以保证 intrinsic gas 无需读取状态即可计算。</li>
+            <li><strong>Value 成本：</strong>只有向不同的普通目标地址转移非零 ETH 时收取 <code>TX_VALUE_COST = 6,000</code>，覆盖接收方余额写入和 EIP-7708 Transfer 日志。零金额、self-transfer 和 contract creation 都不单独收这项。</li>
+            <li><strong>Authorization 成本：</strong>每个 EIP-7702 authorization 收取 <code>EXECUTION_PER_AUTH_BASE_COST = 7,816</code> execution gas，覆盖 authorization 数据、签名恢复、authority 冷访问和基础 warm writes。</li>
+          </ol>
+
+          <h5>二、完整 intrinsic gas</h5>
+          <div class="analysis-formula">intrinsic_gas = 交易形状成本 + calldata 标准成本 + access list 成本 + initcode word 成本（仅创建交易）</div>
+          <p>EIP-2780 主要重构第一项；calldata、access list 和 initcode 的计量继续叠加。Glamsterdam 中这些部分还会分别受到 EIP-7976、EIP-7981 和 EIP-8038 的影响。</p>
+
+          <h5>三、典型交易示例</h5>
+          <dl class="example-list">
+            <dt>1. 给自己转 ETH</dt>
+            <dd><code>12,000 execution gas</code>。sender 与 recipient 是同一账户，不重复收接收方访问，也不生成 EIP-7708 Transfer 日志。</dd>
+
+            <dt>2. 向另一个地址发送零 ETH</dt>
+            <dd><code>12,000 + 3,000 = 15,000 execution gas</code>。目标可以是已有 EOA、合约或不存在地址；零金额本身不会创建新账户。合约目标还要另付实际代码执行 gas。</dd>
+
+            <dt>3. 向已有 EOA 转账</dt>
+            <dd><code>12,000 + 3,000 + 6,000 = 21,000 execution gas</code>，与原来的普通 ETH 转账成本保持一致。</dd>
+
+            <dt>4. 向新地址转账</dt>
+            <dd>intrinsic 仍是 <code>21,000 execution gas</code>，但在 pre-execution 阶段发现 <code>value &gt; 0</code> 且接收方不存在后，还要收取 <code>120 × 1,530 = 183,600 state gas</code>。不含 calldata 时，用户总计至少支付 <code>204,600 gas</code>。</dd>
+
+            <dt>5. 零金额调用普通合约</dt>
+            <dd><code>15,000 + 合约实际执行 gas</code>。其中 15,000 是 sender 基础成本和 recipient 冷访问。</dd>
+
+            <dt>6. 带 ETH 调用普通合约</dt>
+            <dd><code>21,000 + 合约实际执行 gas</code>，其中 6,000 覆盖余额写入和转账日志。</dd>
+
+            <dt>7. 调用 EIP-7702 delegated account</dt>
+            <dd>假设 delegation target 为 cold：零金额为 <code>18,000 + delegated execution</code>；带 ETH 为 <code>24,000 + delegated execution</code>。额外的 3,000 是 runtime 阶段解析 delegation target 并加载其代码的访问成本。</dd>
+
+            <dt>8. 创建合约</dt>
+            <dd><code>12,000 + 12,000 = 24,000 execution gas</code> 基础成本，<code>tx.value = 0</code> 与非零 value 相同。若 deployment address 不存在，再加 <code>183,600 state gas</code>；此外还要支付 initcode calldata、initcode word、initcode 执行和 runtime code deposit 等成本。</dd>
+
+            <dt>9. 创建地址已经有余额但没有 nonce/code</dt>
+            <dd>基础仍为 <code>24,000 execution gas</code>，但该地址已有 state leaf，因此不收 183,600 的新账户 state gas；成功部署的代码仍需支付 code-deposit 成本。</dd>
+          </dl>
+
+          <h5>四、最重要的边界</h5>
+          <p><code>intrinsic_gas</code> 只包含不读取链上状态就能确定的成本，并用于判断交易是否有效；runtime gas 在交易已被接受后根据实际状态收取。runtime 阶段 gas 不足不会使交易从区块中消失：交易仍支付已消耗 gas、sender nonce 仍增加，但执行被跳过或失败，相应的前置状态变化按规范回滚。</p>
+        `,
+        keywords: ["intrinsic gas", "runtime gas", "交易定价"]
+      },
+      {
+        id: "7688",
+        category: "core",
+        title: "Forward compatible consensus data structures",
+        titleZh: "向前兼容的共识层数据结构",
+        brief: "将一批共识层 SSZ 结构迁移到 `ProgressiveContainer`、`ProgressiveList` 等渐进式结构；序列化基本不变，Merkle 化方式改变。",
+        problem: "传统 SSZ `Container` 增删字段会改变树形结构和 generalized index，使链上或离线证明验证器必须跟随每次分叉更新；固定 `List` 容量也把运行限制固化进数据类型。",
+        approach: "为字段提供稳定的 Merkle 位置和激活位图，使未来增加或移除无关字段时，已有字段证明保持可验证；同时把列表容量从静态 schema 中解耦，改为可演进的运行时限制。",
+        keywords: ["SSZ", "ProgressiveContainer", "Merkle proof"]
+      },
+      {
+        id: "7708",
+        category: "core",
+        title: "ETH transfers emit a log",
+        titleZh: "所有 ETH 转账生成统一日志",
+        brief: "为非零 ETH 转移生成与 ERC-20 `Transfer(address,address,uint256)` 形状一致的协议日志，统一追踪原生 ETH 流动。",
+        problem: "ERC-20 余额变化可依赖事件索引，但智能合约钱包发起的内部 ETH 转账没有统一日志，交易所、钱包和索引器必须依赖 trace 等更重且不统一的机制。",
+        approach: "对转给不同账户的交易、`CALL`、`CREATE/CREATE2` endowment 和 `SELFDESTRUCT` 转账发出 `LOG3` 等价日志，由系统地址 `0xffff...fffe` 发出；零金额、同地址转移、回滚调用、费用支付和 withdrawal 不生成该日志。",
+        keywords: ["ETH Transfer log", "索引", "SYSTEM_ADDRESS"]
+      },
+      {
+        id: "7732",
+        category: "core",
+        title: "Enshrined Proposer-Builder Separation",
+        titleZh: "协议内置 Proposer-Builder Separation（ePBS）",
+        brief: "把 builder 变成质押的协议角色，区块先携带 builder 的执行载荷承诺和报价，再由 builder 揭示完整 payload。",
+        problem: "当前 MEV-Boost 依赖可信 relay 完成 proposer 与 builder 的公平交换；同时，验证者在 4 秒关键窗口内要完成共识、执行和 blob 数据可用性检查，限制了扩容空间。",
+        approach: "以 `SignedExecutionPayloadBid` 代替 BeaconBlock 中的完整 payload，协议从 builder 余额扣除报价并支付 proposer；Payload Timeliness Committee 证明 payload 是否及时揭示及 blob 是否可用，执行验证延迟到下一 slot 的区块验证。",
+        keywords: ["ePBS", "builder", "PTC", "delayed execution"],
+        headliner: true
+      },
+      {
+        id: "7778",
+        category: "core",
+        title: "Block Gas Accounting without Refunds",
+        titleZh: "区块 gas 记账不再扣除 refund",
+        brief: "用户费用仍可享受 gas refund，但区块是否达到 gas limit 改按 refund 前的工作量计数。",
+        problem: "清空 storage 等 refund 会同时降低用户费用和区块 `gas_used`，使一个区块实际执行的计算量能够超过 block gas limit 原本要约束的规模。",
+        approach: "用户侧保持 `gas_spent = max(tx_gas_used - refund, calldata_floor)`；区块侧改为累加 `max(tx_gas_used, calldata_floor)`。因此清理状态的经济激励保留，但 refund 不能再换取额外区块执行容量。",
+        keywords: ["gas refund", "block gas accounting", "DoS"]
+      },
+      {
+        id: "7843",
+        category: "core",
+        title: "SLOTNUM opcode",
+        titleZh: "读取当前 Beacon slot 的新 opcode",
+        brief: "增加 `SLOTNUM`（`0x4b`），让合约以固定 2 gas 读取当前区块对应的共识层 slot number。",
+        problem: "合约当前只能通过 timestamp 和硬编码 slot 时长推算，或用 EIP-4788 证明 slot；前者不适应未来 slot 时长变化，后者成本高。",
+        approach: "由共识层计算 slot number，经 Engine API 传入执行层，并写入扩展后的区块头；opcode 返回一个 `uint64`，使合约不再依赖具体 slot 时长。",
+        keywords: ["opcode 0x4b", "slot number", "Engine API"]
+      },
+      {
+        id: "7928",
+        category: "core",
+        title: "Block-Level Access Lists",
+        titleZh: "区块级访问列表（BAL）",
+        brief: "记录区块执行访问过的账户与 storage，以及按交易顺序产生的 post-state 变化，并在区块头承诺其哈希。",
+        problem: "执行前不知道交易会访问哪些地址和 slot，客户端难以并行预取磁盘、并行验证交易或在不执行交易的情况下重建状态；EIP-2930 的交易 access list 又是可选且不强制完整。",
+        approach: "新增 `block_access_list_hash`，BAL 按地址、字段和 `BlockAccessIndex` 编码读取与变化。客户端可据此并行 I/O、并行执行/验证、并行计算状态根，或只应用已验证的状态 diff。BAL 单独存储并通过 Engine API 与网络协议传播。",
+        keywords: ["BAL", "parallel execution", "state diff", "executionless sync"],
+        headliner: true
+      },
+      {
+        id: "7954",
+        category: "core",
+        title: "Increase Maximum Contract Size",
+        titleZh: "提高最大合约代码大小",
+        brief: "将部署后 runtime code 上限从 24 KiB 提高到 64 KiB，initcode 上限从 48 KiB 提高到 128 KiB。",
+        problem: "24 KiB 限制让功能复杂的合约被迫使用拆分、代理或 diamond 等结构，即使 gas limit 足够也无法部署超过协议硬上限的代码。",
+        approach: "把 EIP-170 上限从 24,576 调为 65,536 bytes，把 EIP-3860 initcode 上限从 49,152 调为 131,072 bytes；只改变大小边界，部署仍需满足交易 execution gas、state gas 和其他共识检查。",
+        keywords: ["64 KiB", "initcode 128 KiB", "contract deployment"]
+      },
+      {
+        id: "7976",
+        category: "core",
+        title: "Increase Calldata Floor Cost",
+        titleZh: "提高 calldata 最低 gas 成本",
+        brief: "把数据密集型交易的 calldata floor 从零/非零字节 10/40 gas 提高为统一 64/64 gas。",
+        problem: "随着 block gas limit 提高，现有 calldata floor 仍允许构造体积很大的执行载荷，增加传播、存储与最坏区块处理压力。",
+        approach: "每个 calldata byte 的 floor 统一按 64 gas 计算，使 45M gas 下的理论数据密集载荷从约 1.07 MB 降到约 0.67 MB。只有 floor 高于正常执行计价时才生效，因此大多数计算密集型普通交易仍按原 calldata 4/16 计价。",
+        analysis: `
+          <h5>一、核心结论</h5>
+          <p>EIP-7976 <strong>没有把 calldata 的正常价格直接改成 64 gas/byte</strong>。它保留原来的正常计费：零字节为 <code>4 gas</code>，非零字节为 <code>16 gas</code>；改变的是 calldata 的最低收费地板，零字节和非零字节都统一提高到 <code>64 gas</code>。</p>
+
+          <div class="analysis-formula">最终 gasUsed = max(正常执行消耗, calldata 最低地板)</div>
+
+          <p>下面的公式中，<code>B</code> 是交易基础成本，<code>Z</code> 是 calldata 中的零字节数量，<code>N</code> 是非零字节数量，<code>X</code> 是 calldata 之外的实际执行消耗。</p>
+
+          <h5>二、EIP-7623：当前的旧地板</h5>
+          <p>EIP-7623 保留正常计费，同时增加一张“最低账单”：</p>
+          <div class="analysis-formula">正常账单 = B + 4Z + 16N + X<br>旧地板 = B + 10Z + 40N<br><br>gasUsed = max(正常账单, 旧地板)</div>
+          <p>因此，低计算、高 calldata 的交易至少按零字节 <code>10 gas</code>、非零字节 <code>40 gas</code> 收费。</p>
+
+          <h5>三、EIP-7976 之后</h5>
+          <p>正常账单不变，只提高 calldata 最低地板：</p>
+          <div class="analysis-formula">正常账单 = B + 4Z + 16N + X<br>新地板 = B + 64 × (Z + N)<br><br>gasUsed = max(正常账单, 新地板)</div>
+          <p>在地板计算中，零字节和非零字节完全相同。只有新地板高于正常账单时，EIP-7976 才会提高这笔交易最终支付的 <code>gasUsed</code>。</p>
+        `,
+        keywords: ["calldata floor", "block size", "64 gas/byte"]
+      },
+      {
+        id: "7981",
+        category: "core",
+        title: "Increase Access List Cost",
+        titleZh: "按数据体积提高交易 Access List 成本",
+        brief: "在原 EIP-2930 访问预付费之外，再按 access list 的字节体积收取固定数据附加费。",
+        problem: "access list 只为状态访问定价，没有为其区块数据体积定价，还能与 calldata 组合绕开 EIP-7623/7976 的 floor 约束，扩大最坏区块体积。",
+        approach: "地址按 20 bytes、storage key 按 32 bytes，以 64 gas/byte 附加计费，即每地址 1,280 gas、每 storage key 2,048 gas；该附加费与原 2,400/1,900 访问项费用同时存在。",
+        analysis: `
+          <h5>一、Access List 与原 2,400/1,900 费用</h5>
+          <p>Access List 是交易在执行前声明的账户地址和 storage slots。条目会在 EVM 开始执行前被标记为 <code>warm</code>，后续访问不再按 <code>cold</code> 访问收费。EIP-2930 对每个 address 预收 <code>2,400 gas</code>，对每个 storage key 预收 <code>1,900 gas</code>；例如一个 address 带三个 storage slots，原 access-list intrinsic cost 为 <code>2,400 + 3 × 1,900 = 8,100 gas</code>。</p>
+          <div class="analysis-formula">账户：2,400 预付 + 100 warm access = 2,500（直接 cold access 为 2,600）<br>Storage slot：1,900 预付 + 100 warm SLOAD = 2,000（直接 cold SLOAD 为 2,100）</div>
+          <p>因此“只为状态访问定价”是指这组费用主要表达账户和 storage slot 的数据库访问、预热成本，而不是统一按照交易增加的字节数收费。Access list 自身仍会占用区块空间：每个 address 为 20 bytes，每个 storage key 为 32 bytes，同样需要传播和保存。</p>
+
+          <h5>二、怎样绕过 calldata floor</h5>
+          <p>以 EIP-7976 和全部为非零 calldata 为例，EIP-7981 之前的简化公式为：</p>
+          <div class="analysis-formula">正常账单 = B + 16D + A + X<br>calldata floor = B + 64D<br><br>gasUsed = max(正常账单, calldata floor)</div>
+          <p>其中 <code>D</code> 是非零 calldata 字节数，<code>A</code> 是 access-list 的 <code>2,400/1,900</code> 成本，<code>X</code> 是其他 EVM 执行成本。每个非零 calldata 字节在正常价与 floor 之间有 <code>64 - 16 = 48 gas</code> 的缺口。攻击者可以添加无用或重复的 access-list 条目，使 <code>A ≈ 48D</code>：access-list gas 抬高了正常账单、填平 calldata floor，但 access list 自己增加的字节没有进入 floor。</p>
+
+          <h5>三、具体数字例子</h5>
+          <p>假设一份 access list 含一个 address 和 100 个 storage keys：</p>
+          <div class="analysis-formula">access-list 成本 A = 2,400 + 100 × 1,900 = 192,400 gas<br>access-list 净数据 = 20 + 100 × 32 = 3,220 bytes</div>
+          <p>再配上 4,008 bytes 非零 calldata：</p>
+          <div class="analysis-formula">正常账单（不含 B）= 4,008 × 16 + 192,400 = 256,528 gas<br>calldata floor（不含 B）= 4,008 × 64 = 256,512 gas<br>最终取 max = 256,528 gas</div>
+          <p>交易实际携带的字段数据至少为 <code>4,008 + 3,220 = 7,228 bytes</code>。没有 access list 时，4,008 bytes calldata 本来就要支付 256,512 gas；加入 3,220 bytes access-list 数据后，最终 gas 只增加了 16。也就是说，原 access-list gas 同时填平了 calldata floor，而其数据体积没有支付统一的 floor 价格。这就是与 calldata 组合绕过 EIP-7623/7976 floor。EIP-7623 下原理相同，只是非零字节缺口为 <code>40 - 16 = 24 gas</code>。</p>
+
+          <h5>四、EIP-7981 的修复</h5>
+          <p>EIP-7981 不删除原状态访问费，而是为 access list 的净数据体积增加独立附加费：</p>
+          <div class="analysis-formula">address 数据费 = 20 × 64 = 1,280 gas<br>storage key 数据费 = 32 × 64 = 2,048 gas</div>
+          <p>这笔数据费在最终计价中独立存在，不能再被拿来填平 calldata floor。上例需额外支付 <code>3,220 × 64 = 206,080 gas</code>，从而保证 access-list 字节也按 64 gas/byte 支付数据成本。</p>
+
+          <h5>五、与 EIP-8038 组合后的 Glamsterdam 参数</h5>
+          <p><code>2,400/1,900</code> 是单独解释 EIP-7981 时采用的 EIP-2930 基线。Glamsterdam 同时应用 EIP-8038 后，geth 当前实现把基础状态访问费调整为 address <code>2,900 gas</code>、storage key <code>2,000 gas</code>，再叠加 EIP-7981 的 <code>1,280/2,048</code> 数据费：</p>
+          <div class="analysis-formula">每个 address：2,900 + 1,280 = 4,180 gas<br>每个 storage key：2,000 + 2,048 = 4,048 gas</div>
+        `,
+        keywords: ["EIP-2930", "access list", "data surcharge"]
+      },
+      {
+        id: "7997",
+        category: "core",
+        title: "Deterministic Factory Contract",
+        titleZh: "协议保证的确定性 Factory Contract",
+        brief: "正式要求 EVM 链在同一地址提供一个最小 `CREATE2` factory，用于跨链部署到相同地址。",
+        problem: "`CREATE2` 地址还依赖 factory 地址；现有 keyless deployment 的 gas price/limit 固定，在新 gas schedule 或不同链上可能失效，私钥方式又带来信任与运维风险。",
+        approach: "协议在 `0x4e59b44847b379578588920cA78FbF26c0B4956C` 放置公认 factory。调用 calldata 前 32 bytes 为 salt，其余为 initcode，`msg.value` 转给 `CREATE2` 创建的合约。",
+        keywords: ["CREATE2", "same address", "multichain"]
+      },
+      {
+        id: "8024",
+        category: "core",
+        title: "Backward compatible SWAPN, DUPN, EXCHANGE",
+        titleZh: "向后兼容的深栈操作指令",
+        brief: "新增 `DUPN`、`SWAPN`、`EXCHANGE`，让编译器直接访问 16 层以下的栈项，或交换两个非栈顶位置。",
+        problem: "EVM 栈深 1,024，但 `DUP*`/`SWAP*` 只能方便访问前 16 项；更多局部变量和函数参数需要频繁转存 memory，增加字节码、gas 与编译器复杂度。",
+        approach: "占用 `0xe6`、`0xe7`、`0xe8`，携带静态 1-byte immediate，统一收费 3 gas。通过禁止特定 immediate 编码保持既有 `JUMPDEST` 分析不变，从而避免没有 EOF 字节码版本化时破坏旧合约。",
+        keywords: ["DUPN", "SWAPN", "EXCHANGE", "compiler"]
+      },
+      {
+        id: "8037",
+        category: "core",
+        title: "State Creation Gas Cost Increase",
+        titleZh: "提高并独立计量状态创建成本",
+        brief: "以每个新增状态字节统一定价，引入 execution-gas / state-gas 两维计量与 `state_gas_reservoir`。",
+        problem: "新 storage、账户和合约代码的单位状态成本不一致且总体偏低；随着 block gas limit 提升，永久状态增长会成为节点磁盘、数据库性能和同步的长期瓶颈。",
+        approach: "设 `CPSB = 1,530`：新 storage slot 按 64 bytes 计 97,920 state gas，新账户按 120 bytes 计 183,600，代码按每 byte 1,530。交易仍只有一个 `tx.gas`，其中 execution budget 受单交易执行上限约束，超出部分进入 reservoir，状态创建优先从 reservoir 扣；区块分别累计两维并以更拥塞的一维约束容量。",
+        analysis: `
+          <h5>一、EIP-8037 解决什么问题</h5>
+          <p>以前不同类型的状态创建定价不一致：新 storage slot 约 <code>20,000 gas</code>，新账户约 <code>25,000 gas</code>，合约代码为 <code>200 gas/byte</code>，EIP-7702 delegation 又使用另一套价格。这些操作最终都会增加节点需要永久保存的状态，但单位字节价格不同；随着 block gas limit 提升，状态还可能增长过快。</p>
+          <p>EIP-8037 引入统一参数：</p>
+          <div class="analysis-formula">CPSB = Cost Per State Byte = 1,530 gas/byte</div>
+          <p>当前 EIP-8037 按以下估算收费：</p>
+          <div class="analysis-formula">新 storage slot：64 × 1,530 = 97,920 state gas<br><br>新账户：120 × 1,530 = 183,600 state gas<br><br>新 delegation indicator：23 × 1,530 = 35,190 state gas<br><br>部署 L bytes runtime code：L × 1,530 state gas</div>
+          <p>这些只是 state gas 部分；访问、写入、hash、initcode 执行等仍可能产生 execution gas。</p>
+
+          <h5>二、和附录 X 的关系</h5>
+          <p>附录中的正常账单为：</p>
+          <div class="analysis-formula">正常账单（refund 前）= intrinsic_gas + X</div>
+          <p>可以进一步拆成：</p>
+          <div class="analysis-formula">X = X_execution + X_state<br><br>正常账单（refund 前）=<br>intrinsic_gas<br>+ runtime_execution_gas<br>+ net_state_gas</div>
+          <ul>
+            <li><code>intrinsic_gas</code>：执行前根据交易字段固定计算。</li>
+            <li><code>runtime_execution_gas</code>：普通 CPU、数据库访问、写操作和 opcode 成本。</li>
+            <li><code>net_state_gas</code>：EIP-8037 计算的、交易结束后真正留下来的新增状态成本。</li>
+          </ul>
+          <p>所以 EIP-8037 主要影响 <code>X_state</code>，但它还改变交易 gas budget、单交易上限和区块 gas 记账，因此影响范围不只是一项费用。</p>
+
+          <h5>三、哪些 state gas 在什么时候收取</h5>
+          <p><strong>进入 EVM 前：</strong>这些费用发生在 intrinsic 检查之后、第一层调用执行之前，属于 <code>X</code>，不是 intrinsic gas。</p>
+          <ul>
+            <li>向不存在的 EOA 转账：<code>183,600 state gas</code>。</li>
+            <li>顶层创建合约的新账户：<code>183,600 state gas</code>。</li>
+            <li>EIP-7702 创建 authority 账户：<code>183,600 state gas</code>。</li>
+            <li>新增 delegation indicator：<code>35,190 state gas</code>。</li>
+          </ul>
+          <p><strong>EVM 执行期间：</strong></p>
+          <ul>
+            <li><code>SSTORE 0 → 非零</code>：<code>97,920 state gas</code>。</li>
+            <li><code>CALL</code> 转账并创建新账户：<code>183,600 state gas</code>。</li>
+            <li><code>CREATE/CREATE2</code> 创建新账户：<code>183,600 state gas</code>。</li>
+            <li>成功部署 <code>L</code> bytes 代码：<code>1,530 × L state gas</code>。</li>
+          </ul>
+
+          <h5>四、两个 gas 维度</h5>
+          <p>每个操作现在可以产生一个二维成本：</p>
+          <div class="analysis-formula">GasCosts = &lt;executionGas, stateGas&gt;</div>
+          <p>例如部署 1,000 bytes runtime code：</p>
+          <div class="analysis-formula">state gas =<br>新账户 183,600<br>+ 代码 1,000 × 1,530<br>= 1,713,600<br><br>execution gas 还包括：<br>创建访问、initcode 执行、内存、opcode、代码 hash 等</div>
+          <p>用户最终仍然只有一个手续费：</p>
+          <div class="analysis-formula">手续费 = 最终 gasUsed × effectiveGasPrice</div>
+          <p>没有单独的 <code>stateGasPrice</code>。用户支付的标量 gasUsed 包含 execution gas 和 state gas。</p>
+
+          <h5>五、state_gas_reservoir</h5>
+          <p>交易仍只有一个 <code>tx.gas</code>，所以 EIP-8037 将 intrinsic 之后的预算拆成：</p>
+          <div class="analysis-formula">evm_gas = tx.gas - intrinsic_gas<br><br>execution_gas_budget =<br>16,777,216 - intrinsic_gas<br><br>gas_left =<br>min(execution_gas_budget, evm_gas)<br><br>state_gas_reservoir =<br>evm_gas - gas_left</div>
+          <p>例如：</p>
+          <div class="analysis-formula">tx.gas = 20,000,000<br>intrinsic_gas = 100,000<br><br>evm_gas = 19,900,000<br>gas_left = 16,777,216 - 100,000<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 16,677,216<br><br>reservoir = 3,222,784</div>
+          <ul>
+            <li><code>gas_left</code>：普通 execution gas 可见预算。</li>
+            <li><code>reservoir</code>：超过单交易 execution cap 的部分，优先供 state creation 使用。</li>
+            <li>execution gas 只能从 <code>gas_left</code> 扣。</li>
+            <li>state gas 先从 reservoir 扣；不够时可以继续从 <code>gas_left</code> 扣。</li>
+          </ul>
+          <p>如果 <code>tx.gas</code> 没超过 16,777,216，reservoir 通常为零，但 state gas 仍然可以从 <code>gas_left</code> 支付。本地实现见 <code>core/state_transition.go:521</code>。</p>
+
+          <h5>六、为什么这样设计</h5>
+          <p>目标是允许一笔交易创建大量状态，但不允许一笔交易获得同等规模的 CPU 执行预算。因此总 <code>tx.gas</code> 可以提高到：</p>
+          <div class="analysis-formula">2^32 - 1 = 4,294,967,295</div>
+          <p>但普通 execution gas 仍受以下上限约束：</p>
+          <div class="analysis-formula">2^24 = 16,777,216</div>
+          <p>超过的部分主要形成 state reservoir。<code>GAS</code> opcode 只能看到 <code>gas_left</code>，看不到 reservoir；63/64 转发规则也只作用于 <code>gas_left</code>。</p>
+
+          <h5>七、State gas refill</h5>
+          <p>State gas refill 不是普通 gas refund。例如执行 <code>SSTORE: 0 → 123</code> 时先收取 <code>97,920 state gas</code>；如果同一交易随后执行 <code>SSTORE: 123 → 0</code>，新 slot 没有永久留下，之前的 97,920 会 refill。</p>
+          <p>同样，子调用创建账户或合约后又 <code>REVERT</code>，对应 state gas 会返还。它不受普通 refund 的 20% 上限约束，因为这项状态资源最终根本没有被消耗。但清除交易开始前已经存在的 slot，不会返还历史 state gas。</p>
+
+          <h5>八、区块级二维记账</h5>
+          <p>区块分别累计：</p>
+          <div class="analysis-formula">block_execution_gas_used<br>block_state_gas_used</div>
+          <p>最终区块头中的：</p>
+          <div class="analysis-formula">block.gasUsed = max(<br>&nbsp;&nbsp;block_execution_gas_used,<br>&nbsp;&nbsp;block_state_gas_used<br>)</div>
+          <p>不是两者相加。execution 更高时 CPU/执行成为瓶颈，state 更高时磁盘状态增长成为瓶颈；两者都接近 limit 时，区块同时充分使用两类资源。本地实现见 <code>core/gaspool.go:26</code>，交易结算见 <code>core/state_transition.go:1034</code>。</p>
+
+          <div class="analysis-formula">intrinsic_gas：执行前固定成本<br><br>X_execution：交易实际做了多少普通工作<br><br>X_state：交易最终留下了多少新增状态<br><br>X = X_execution + X_state</div>
+          <p>EIP-8037 主要定义 <code>X_state</code>，以及它如何与 <code>X_execution</code> 共享一笔交易的 gas limit。</p>
+        `,
+        keywords: ["state gas", "CPSB", "reservoir", "state growth"]
+      },
+      {
+        id: "8038",
+        category: "core",
+        title: "State-access gas cost update",
+        titleZh: "更新状态访问与写入 gas 成本",
+        brief: "依据当前客户端和更大状态数据库的实测成本，重新拆分并定价 access、write、state creation 三类资源。",
+        problem: "Berlin 的 EIP-2929 定价多年未更新，状态增长已使访问变慢；旧模型还把写成本混在 `CALL_VALUE`、`SSTORE_RESET_GAS` 等复合常量中，并低估 `EXTCODESIZE/COPY` 的第二次数据库读取。",
+        approach: "冷账户访问 2,600→3,000，新增 `ACCOUNT_WRITE = 9,000`、`STORAGE_WRITE = 10,000`、`CREATE_ACCESS = 12,000`；冷 storage 2,100 和 warm 100 不变。新状态叶子的创建成本交给 EIP-8037 的 state-gas 维度。",
+        analysis: `
+          <h5>一、计价参数前后对比</h5>
+          <p>下表只比较 EIP-8038 自身调整或重新拆出的 execution-gas 参数。增长率按 <code>(变化后 - 变化前) / 变化前</code> 计算到两位小数；EIP 原文中的百分比按整数取整。</p>
+          <div class="analysis-table-wrap">
+            <table class="analysis-table">
+              <thead>
+                <tr>
+                  <th>参数</th>
+                  <th>类型</th>
+                  <th>变化前</th>
+                  <th>变化后</th>
+                  <th>增长率</th>
+                  <th>主要影响</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>COLD_ACCOUNT_ACCESS</code></td>
+                  <td>访问</td>
+                  <td>2,600</td>
+                  <td>3,000</td>
+                  <td><strong>+15.38%</strong></td>
+                  <td><code>*CALL</code>、<code>BALANCE</code>、<code>SELFDESTRUCT</code>、<code>EXT*</code>、delegation、ETH 转账</td>
+                </tr>
+                <tr>
+                  <td><code>COLD_STORAGE_ACCESS</code></td>
+                  <td>访问</td>
+                  <td>2,100</td>
+                  <td>2,100</td>
+                  <td><strong>0%</strong></td>
+                  <td><code>SLOAD</code>、<code>SSTORE</code> 的冷访问</td>
+                </tr>
+                <tr>
+                  <td><code>WARM_ACCESS</code></td>
+                  <td>访问</td>
+                  <td>100</td>
+                  <td>100</td>
+                  <td><strong>0%</strong></td>
+                  <td>账户和 storage slot 的热访问</td>
+                </tr>
+                <tr>
+                  <td><code>ACCOUNT_WRITE</code></td>
+                  <td>写入</td>
+                  <td>6,700*</td>
+                  <td>9,000</td>
+                  <td><strong>+34.33%</strong></td>
+                  <td>带 value 的 <code>*CALL</code>、<code>SELFDESTRUCT</code>、合约创建、delegation setting</td>
+                </tr>
+                <tr>
+                  <td><code>STORAGE_WRITE</code></td>
+                  <td>写入</td>
+                  <td>2,800*</td>
+                  <td>10,000</td>
+                  <td><strong>+257.14%</strong></td>
+                  <td><code>SSTORE</code> 首次把 slot 改离交易开始时的值</td>
+                </tr>
+                <tr>
+                  <td><code>CREATE_ACCESS</code></td>
+                  <td>访问 + 写入</td>
+                  <td>7,000*</td>
+                  <td>12,000</td>
+                  <td><strong>+71.43%</strong></td>
+                  <td>创建交易、<code>CREATE</code>、<code>CREATE2</code></td>
+                </tr>
+                <tr>
+                  <td><code>STORAGE_CLEAR_REFUND</code></td>
+                  <td>Refund</td>
+                  <td>4,800</td>
+                  <td>11,616</td>
+                  <td><strong>+142.00%</strong></td>
+                  <td><code>SSTORE</code> 清除已有 storage slot 时的 refund credit</td>
+                </tr>
+                <tr>
+                  <td><code>ACCESS_LIST_STORAGE_KEY_COST</code></td>
+                  <td>预付访问</td>
+                  <td>1,900</td>
+                  <td>2,000</td>
+                  <td><strong>+5.26%</strong></td>
+                  <td>Access List 中的每个 storage key</td>
+                </tr>
+                <tr>
+                  <td><code>ACCESS_LIST_ADDRESS_COST</code></td>
+                  <td>预付访问</td>
+                  <td>2,400</td>
+                  <td>2,900</td>
+                  <td><strong>+20.83%</strong></td>
+                  <td>Access List 中的每个 address</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h5>二、带星号的旧值怎么理解</h5>
+          <p><code>ACCOUNT_WRITE</code>、<code>STORAGE_WRITE</code> 和 <code>CREATE_ACCESS</code> 在旧规则中不是独立常量，而是嵌在复合费用里。表中的旧值是从旧组合价格中拆出的等价组成项：</p>
+          <div class="analysis-formula">ACCOUNT_WRITE：<br>9,000 CALL_VALUE - 2,300 CALL_STIPEND = 6,700<br><br>STORAGE_WRITE：<br>5,000 SSTORE_RESET - 2,100 COLD_STORAGE_ACCESS - 100 WARM_ACCESS = 2,800<br><br>CREATE_ACCESS：<br>32,000 GAS_CREATE - 25,000 GAS_NEW_ACCOUNT = 7,000</div>
+          <p>因此这三个百分比适合用于理解成本组成，但不能直接理解为每条相关 opcode 的总价格都按相同比例上涨。EIP-8038 也指出旧计价体系不能完全精确地拆成这些独立组成项。</p>
+
+          <h5>三、Refund 增长不是收费增长</h5>
+          <p><code>STORAGE_CLEAR_REFUND</code> 从 <code>4,800</code> 增至 <code>11,616</code>，表示清除交易开始前已经存在的非零 storage slot 时可以获得更大的 execution-gas refund credit。它会降低交易的净 gasUsed，而不是让用户多支付 142%；普通 refund 仍受交易 gasUsed 的 20% 上限约束。</p>
+
+          <h5>四、与 EIP-7981 组合后的 Access List 成本</h5>
+          <p>表中的 <code>2,900/2,000</code> 是 EIP-8038 调整后的状态访问预付费。Glamsterdam 同时应用 EIP-7981 后，还要为 Access List 字段本身按 <code>64 gas/byte</code> 支付数据附加费：</p>
+          <div class="analysis-formula">每个 address：<br>2,900 access cost + 20 × 64 data cost<br>= 4,180 gas<br><br>每个 storage key：<br>2,000 access cost + 32 × 64 data cost<br>= 4,048 gas</div>
+          <p>因此 <code>2,900/2,000</code> 是 EIP-8038 的访问成本，<code>4,180/4,048</code> 才是叠加 EIP-7981 后，每个 Access List address/storage key 对 intrinsic gas 的完整贡献。EIP-8037 的 state creation 费用仍是另一维度，不包含在本表中。</p>
+
+          <h5>五、和附录 X_execution / X_state 的关系</h5>
+          <div class="analysis-formula">正常账单（refund 前） = intrinsic_gas + X_execution + X_state</div>
+          <p>EIP-8038 的核心目标是重新定价 execution-gas 维度中的状态访问和状态写入工作，但不能简单地说它只修改 <code>X_execution</code>。同一组 execution-gas 参数既可能在 EVM runtime 阶段收取，也可能被 EIP-2780、Access List 和 authorization 的 intrinsic 计算引用。</p>
+
+          <p><strong>属于 <code>X_execution</code> 的部分：</strong>交易实际执行期间，由 <code>SLOAD</code>、<code>SSTORE</code>、<code>CALL</code>、<code>CALLCODE</code>、<code>DELEGATECALL</code>、<code>STATICCALL</code>、<code>BALANCE</code>、<code>EXT*</code>、<code>CREATE/CREATE2</code> 和 <code>SELFDESTRUCT</code> 等操作产生的访问与写入 execution gas。</p>
+
+          <p>例如创建一个新的 storage slot：</p>
+          <div class="analysis-formula">冷的新 storage slot：<br>2,100 COLD_STORAGE_ACCESS<br>+ 10,000 STORAGE_WRITE<br>= 12,100 execution gas（EIP-8038）<br><br>64 × 1,530<br>= 97,920 state gas（EIP-8037）<br><br>合计 = 110,020 gas<br><br>如果 slot 已经 warm：<br>100 + 10,000 + 97,920<br>= 108,020 gas</div>
+          <p>这里的 <code>12,100/10,100</code> 属于 <code>X_execution</code>；持久新增 slot 对应的 <code>97,920</code> 属于 <code>X_state</code>。</p>
+
+          <p><strong>属于 <code>intrinsic_gas</code> 的部分：</strong></p>
+          <ul>
+            <li>EIP-2780 的普通目标地址使用 <code>COLD_ACCOUNT_ACCESS = 3,000</code> 作为 <code>B</code> 的 recipient component。</li>
+            <li>顶层合约创建使用 <code>CREATE_ACCESS = 12,000</code>，所以创建交易的基础 <code>B = 12,000 + 12,000 = 24,000</code>。</li>
+            <li>Access List 的状态访问预付费使用 address <code>2,900</code>、storage key <code>2,000</code>。</li>
+            <li>每个 authorization 的 <code>7,816 execution gas</code> 基础成本，也包含 EIP-8038 的 cold account access 和 warm writes 参数。</li>
+          </ul>
+
+          <p><strong>Refund 部分：</strong><code>STORAGE_CLEAR_REFUND = 11,616</code> 不属于 <code>X_execution</code> 或 <code>X_state</code> 本身，而是在执行结束后通过 refund counter 影响 <code>正常 gasUsed = gasUsedBeforeRefund - refund</code>。</p>
+
+          <div class="analysis-formula">EIP-8037：主要定义 X_state，即永久状态增长的 state gas<br><br>EIP-8038：重新定价状态访问和写入的 execution gas<br>其中 runtime 部分属于 X_execution；交易形状、Access List 和 authorization 的固定部分属于 intrinsic_gas</div>
+          <p>因此最准确的表述是：EIP-8038 修改的是 execution-gas 维度的状态访问与写入计价；它的大部分 runtime 影响落在 <code>X_execution</code>，但也会改变部分 <code>intrinsic_gas</code>，基本不负责 <code>X_state</code>。</p>
+        `,
+        keywords: ["state access", "ACCOUNT_WRITE", "STORAGE_WRITE", "repricing"]
+      },
+      {
+        id: "8045",
+        category: "core",
+        title: "Exclude slashed validators from proposing",
+        titleZh: "禁止已被 slashing 的验证者继续被选为 proposer",
+        brief: "在 beacon proposer 候选集合中提前过滤 `slashed = true` 的验证者。",
+        problem: "现行规则仍可能选中已 slashing 的验证者，但其区块会在状态转换中被判无效，只能形成 missed slot；大规模 slashing 后这种情况可能持续到它们退出，拖慢网络恢复。",
+        approach: "基于 EIP-7917 的 proposer lookahead，在 `get_beacon_proposer_indices` 输入集合中仅保留 active 且未 slashing 的验证者，再执行原有加权选择。",
+        keywords: ["slashing", "proposer selection", "resilience"]
+      },
+      {
+        id: "8061",
+        category: "core",
+        title: "Increase exit and consolidation churn",
+        titleZh: "提高退出与 consolidation churn",
+        brief: "大致把 exit churn 提高四倍、consolidation churn 提高两倍，同时保留 activation cap。",
+        problem: "退出上限不随总质押增长，质押量越大退出队列越长；consolidation 太慢也拖延验证者集合收缩与更快 finality 的演进。",
+        approach: "把 exit/activation 的 `CHURN_LIMIT_QUOTIENT` 从 `2^16` 减半为 `2^15`，activation 仍封顶 256 ETH/epoch，exit 不再受该 cap；为 consolidation 独立设置 `2^16` quotient，并相应调整 weak subjectivity period 计算。",
+        keywords: ["validator exit", "consolidation", "churn", "weak subjectivity"]
+      },
+      {
+        id: "8246",
+        category: "core",
+        title: "Remove SELFDESTRUCT Burn",
+        titleZh: "移除 SELFDESTRUCT 的剩余 ETH burn 行为",
+        brief: "账户仍可在特定情况下清除 code、storage 和 nonce，但 `SELFDESTRUCT` 不再让剩余 ETH 从总供应中消失。",
+        problem: "EIP-6780 之后仅剩极少同交易创建并销毁的 burn 边界情形，实际几乎无人使用，却要求客户端、规范和测试长期维护复杂特例。",
+        approach: "同交易创建的合约向自身 `SELFDESTRUCT` 时余额保持；finalization 时被标记账户 nonce 归零、code/storage 清空但余额保留。余额为零的空账户仍按 EIP-161 删除。",
+        analysis: `
+          <p><strong>核心结论：</strong>EIP-8246 不删除 <code>SELFDESTRUCT</code>，也不取消所有状态清理。它只移除 <code>SELFDESTRUCT</code> 让 ETH 从状态中凭空消失的最后两个边界场景。</p>
+
+          <h5>一、历史演变</h5>
+          <p>在 Cancun / EIP-6780 之前，合约执行 <code>SELFDESTRUCT(beneficiary)</code> 时，会把当前余额转给 beneficiary、结束当前调用 frame，并在交易结束时删除合约账户，包括 code 和 storage。</p>
+          <p>EIP-6780 生效后，行为按合约是否在当前交易中创建分成两类：</p>
+          <div class="analysis-formula">已经存在的老合约：<br>转移余额；不删除 code；不删除 storage；不重置 nonce<br><br>当前交易刚创建的合约：<br>仍然标记 selfdestruct；交易结束时清除账户的 code、storage、nonce 和剩余 balance</div>
+          <p>因此，普通老合约的 <code>SELFDESTRUCT</code> 从 EIP-6780 开始已经基本变成“转走全部余额并结束当前调用”；EIP-8246 处理的是同交易创建并自毁的合约仍然可能烧毁 ETH 的遗留特例。</p>
+
+          <h5>二、EIP-8246 解决的两个 ETH burn 场景</h5>
+          <p><strong>场景 1：新合约把 beneficiary 指向自己。</strong>假设当前交易刚创建的合约 A 持有 10 ETH，并执行 <code>SELFDESTRUCT(A)</code>。EIP-8246 之前，因为来源和目标相同而不会执行转入，随后 A 的余额会被清空，10 ETH 从状态中消失。EIP-8246 之后，这个 self-transfer 被视为 no-op，A 的 10 ETH 保持不变。</p>
+          <div class="analysis-formula">此前：A 余额 10 ETH → 清零并删除 → 10 ETH 被 burn<br><br>EIP-8246：A 余额保持 10 ETH → 清除 code/storage/nonce → 留下 balance-only account</div>
+          <p><strong>场景 2：新合约自毁后，在交易 finalization 前又收到 ETH。</strong>例如 A 先执行 <code>SELFDESTRUCT(B)</code>，把当时的 10 ETH 转给 B；同一交易稍后又有合约向已经被标记自毁的 A 转入 3 ETH。此前 finalization 会删除 A，后来收到的 3 ETH 也随之消失；EIP-8246 后，B 仍收到 10 ETH，但 A 后来收到的 3 ETH 会被保留。</p>
+          <p>这里的 burn 不是“转入零地址”，而是余额在状态转换中被直接清除，账户余额总和因此减少。</p>
+
+          <h5>三、交易结束时的最终状态</h5>
+          <p>对于被标记为 selfdestruct 的同交易新合约，EIP-8246 在 finalization 阶段执行：</p>
+          <div class="analysis-formula">nonce → 0<br>balance → 保持交易结束时的最终余额<br>code → 清空<br>storage → 全部清空</div>
+          <p>如果最终余额非零，状态树中会留下一个只有余额的 <strong>balance-only account</strong>。如果最终余额也是零，那么该账户同时满足 nonce 为零、code 为空、balance 为零，仍会按照 EIP-161 作为空账户删除。</p>
+          <p>因此更准确的描述是：EIP-8246 保留了同交易创建合约的 code/storage 清理效果，但不再删除非零余额。</p>
+
+          <h5>四、不同场景的前后结果</h5>
+          <dl class="example-list">
+            <dt>1. 老合约执行 SELFDESTRUCT(B)</dt>
+            <dd>与 EIP-6780 之后相同：全部余额转给 B，A 的 code、storage 和 nonce 保留，A 不会被删除。</dd>
+
+            <dt>2. 老合约执行 SELFDESTRUCT(A)</dt>
+            <dd>余额不变，code、storage 和 nonce 也不变；主要效果是结束当前调用 frame。</dd>
+
+            <dt>3. 新合约执行 SELFDESTRUCT(B)，之后不再收款</dt>
+            <dd>余额转给 B；A 在 finalization 时清除 code、storage 和 nonce。因为最终余额为零，A 作为空账户删除，EIP-8246 前后结果基本相同。</dd>
+
+            <dt>4. 新合约持有 10 ETH 并执行 SELFDESTRUCT(A)</dt>
+            <dd>此前 10 ETH 被 burn，A 被删除；EIP-8246 后 10 ETH 留在 A，code 和 storage 清空，nonce 重置为零。</dd>
+
+            <dt>5. 新合约自毁后又收到 3 ETH</dt>
+            <dd>此前 3 ETH 在 finalization 时随 A 删除而被 burn；EIP-8246 后 A 作为 balance-only account 保留这 3 ETH。</dd>
+          </dl>
+
+          <h5>五、为什么 nonce 必须重置为 0</h5>
+          <p>合约创建碰撞主要检查目标账户是否满足 <code>nonce != 0</code> 或 code 非空；单独存在余额不会阻止创建。清除 code 并把 nonce 重置为零后，使用相同 factory、salt 和 initcode 的 <code>CREATE2</code> 可以在后续交易中重新创建同一个地址。</p>
+          <div class="analysis-formula">相同 factory + 相同 salt + 相同 initcode<br>→ 相同 CREATE2 地址<br><br>目标账户仅有 balance、nonce = 0、code 为空<br>→ 不构成 creation collision</div>
+          <p><strong>安全风险：</strong>如果地址中保留了 ETH，而原 Factory 允许任何人调用，那么公开的 salt 和 initcode 可能被其他人用于重新部署该地址。constructor 会在已有余额的账户上执行，并可能转走其中的 ETH。因此这些 balance-only accounts 不能简单理解为永久安全的“锁仓地址”。</p>
+
+          <h5>六、EIP-8246 没有改变什么</h5>
+          <ul>
+            <li>没有删除 <code>SELFDESTRUCT</code> opcode。</li>
+            <li>没有改变 <code>SELFDESTRUCT</code> 的 gas 定价。</li>
+            <li>没有恢复 SELFDESTRUCT gas refund；该 refund 已由 EIP-3529 移除。</li>
+            <li>没有让老合约重新获得删除 code 和 storage 的能力。</li>
+            <li>没有取消同交易新合约的 code、storage 和 nonce 清理。</li>
+            <li>没有取消 EIP-1559 base fee、blob fee 等协议费用燃烧。</li>
+          </ul>
+          <p>“移除最后的 burn”特指移除 EVM 内通过 <code>SELFDESTRUCT</code> 让 ETH 离开账户状态总量的最后机制，并不表示 Ethereum 不再有其他协议级 ETH burn。</p>
+
+          <h5>七、与 EIP-7708 的关系</h5>
+          <p>EIP-7708 要求原生 ETH 转账生成统一日志。当 <code>SELFDESTRUCT(A → B)</code> 确实把余额从 A 转给 B 时，会产生对应的 ETH transfer log；当新合约执行 <code>SELFDESTRUCT(A → A)</code> 时，EIP-8246 使余额保持不变，因此不存在实际价值转移，也不应生成一笔虚假的转账日志。</p>
+          <div class="analysis-formula">A → B 且转移非零余额：生成 ETH transfer log<br><br>A → A：余额未移动，不生成 transfer log</div>
+        `,
+        keywords: ["SELFDESTRUCT", "ETH burn", "EIP-6780"]
+      },
+      {
+        id: "8282",
+        category: "core",
+        title: "Builder Execution Requests",
+        titleZh: "Builder 专用执行层请求",
+        brief: "为 ePBS builder 增加独立的 deposit 与 exit 预部署合约，并通过 EIP-7685 request bus 送入共识层。",
+        problem: "EIP-7732 原先复用 validator deposit/voluntary exit 流程，角色识别依赖 withdrawal credential 前缀，deposit 验证工作难以独立限流，退出还要求使用 builder 的热 BLS key。",
+        approach: "增加 request type `0x03`/`0x04` 和两个预部署合约；deposit 负责注册及 top-up，exit 允许 `execution_address` 发起完整退出。两类队列使用动态请求费并设置每区块处理上限。",
+        keywords: ["builder deposit", "builder exit", "EIP-7685", "ePBS"]
+      },
+      {
+        id: "7975",
+        category: "network",
+        title: "eth/70 - partial block receipt lists",
+        titleZh: "分页传输区块 receipts",
+        brief: "升级到 `eth/70`，允许一个区块的 receipt list 跨多个 P2P 响应分页获取。",
+        problem: "gas limit 提高后，单区块 receipts 最坏体积可能超过客户端常见的 10 MiB 消息上限，导致同步失败或必须接收过大的未验证输入。",
+        approach: "`Receipts` 响应增加 `lastBlockIncomplete`，`GetReceipts` 请求增加 `firstBlockReceiptIndex`，客户端据此续取剩余 receipts，并用交易数量、单 receipt gas 上界和区块 gas limit 做额外约束。",
+        keywords: ["eth/70", "receipts", "pagination", "sync"]
+      },
+      {
+        id: "8070",
+        category: "network",
+        title: "eth/72 - Sparse Blobpool",
+        titleZh: "稀疏 Blobpool",
+        brief: "执行层不再让每个节点完整复制所有 blob，而是以一定概率完整持有，其余节点按 custody 采样 cells。",
+        problem: "blob 数量持续上升时，完整复制的 EL blobpool 会主导带宽并与区块、attestation 传播竞争，威胁节点稳定性与网络活性。",
+        approach: "节点以 `p = 0.15` 下载完整 blob，否则主要下载与 CL custody 对齐的 8/64 cells 并加随机采样，平均带宽约为当前的 25%。`eth/72` 增加 cell mask 与 `GetCells/Cells` 等消息，并保留足够完整持有节点形成传播骨干。",
+        keywords: ["eth/72", "blobpool", "PeerDAS", "sampling"]
+      },
+      {
+        id: "8136",
+        category: "network",
+        title: "Cell-Level Deltas for Data Column Broadcast",
+        titleZh: "Data Column 广播的 Cell-Level Delta",
+        brief: "PeerDAS 节点交换某一 data column 中对方缺失的 cells，而不是重复传完整 column。",
+        problem: "大多数 block 引用的 blob 已在本地 mempool；现有方案只缺一个 blob 也要等待完整 data column，浪费带宽并延迟数据可用性检查。",
+        approach: "使用 Gossipsub Partial Messages Extension 交换 cell bitmap 并按需拉取缺失 cells，默认从全量 push 转为更克制的 pull；不支持扩展的节点继续收发完整 column，可渐进部署且无需 hard fork。",
+        keywords: ["PeerDAS", "data column", "cell delta", "gossipsub"]
+      },
+      {
+        id: "8159",
+        category: "network",
+        title: "eth/71 - Block Access List Exchange",
+        titleZh: "节点间交换 BAL",
+        brief: "为 `eth/71` 增加历史 Block-Level Access List 的请求与响应消息。",
+        problem: "Engine API 只覆盖共识层向执行层的正常出块路径；同步节点和并行执行客户端还需要从 P2P peers 获取历史 BAL。",
+        approach: "增加 `GetBlockAccessLists (0x12)` 和 `BlockAccessLists (0x13)`，响应中的 RLP BAL 必须对照 header 的 `block-access-list-hash` 验证，并受响应大小和限流约束。",
+        keywords: ["eth/71", "BAL exchange", "P2P", "historical data"]
+      },
+      {
+        id: "8189",
+        category: "network",
+        title: "snap/2 - BAL-Based State Healing",
+        titleZh: "基于 BAL 的状态修复与同步",
+        brief: "用按区块获取并应用 BAL state diff 的方式，替代 snap sync 中逐个发现和拉取 trie node 的 healing。",
+        problem: "snap/1 healing 需要反复发现缺失 Merkle trie nodes 并多轮请求；同步期间 head 持续前进会产生大量迭代式修复工作。",
+        approach: "`snap/2` 移除 `GetTrieNodes/TrieNodes (0x06/0x07)`，增加 `GetBlockAccessLists/BlockAccessLists (0x08/0x09)`。节点下载 pivot 状态后按区块顺序验证并应用 BAL，最终重算 state root；旧节点仍可继续使用独立协商的 snap/1。",
+        keywords: ["snap/2", "state healing", "BAL", "state sync"]
+      },
+      {
+        id: "7904",
+        category: "info",
+        title: "Compute Gas Cost Analysis",
+        titleZh: "EVM 计算类 gas 成本实测分析",
+        brief: "记录主要客户端在 BAL 并行优化后的 opcode 与 precompile 基准，结论是计算类操作目前无需涨价。",
+        problem: "提升 block gas limit 前需要确认是否存在低价、高 CPU 的计算操作，否则攻击者可用某些 opcode 或 precompile 构造超长处理区块。",
+        approach: "以 100 Mgas/s 为目标，跨主要执行客户端测试 18 个候选 gas 参数；所有被测计算操作都达到或超过目标，因此该 EIP 不修改 gas schedule，只保留方法、数据和结论供后续重定价参考。",
+        keywords: ["benchmark", "compute gas", "100 Mgas/s", "informational"]
+      },
+      {
+        id: "8261",
+        category: "info",
+        title: "Gas Limit Schedule",
+        titleZh: "按 epoch 协调 Gas Limit 的建议时间表",
+        brief: "建议 Gloas 之后由共识层 `config.yaml` 提供可选、按 epoch 生效的默认 gas limit 与推荐上限。",
+        problem: "客户端默认 gas limit 随软件版本生效，早升级者会提前开始投票，晚升级者又拖慢整体调整；大幅提升时缺少网络统一、机器可读的生效时间点。",
+        approach: "增加可选 `GAS_LIMIT_SCHEDULE`，客户端按 duty 所属 epoch 选择当前条目并无需重启切换。它只是一致的默认值与告警阈值，不是共识上限；operator 设置仍被尊重，EIP-1559 的每区块 ±1/1024 有效性规则不变。",
+        keywords: ["gas limit", "epoch schedule", "validator preference", "informational"]
+      }
+    ];
+
+    const listRoot = document.getElementById("eip-list");
+    const navRoot = document.getElementById("sidebar-nav");
+    const searchInput = document.getElementById("search");
+    const resultCount = document.getElementById("result-count");
+    const emptyState = document.getElementById("empty-state");
+    let activeFilter = "all";
+
+    function badgeClass(category) {
+      return `badge badge-${category}`;
+    }
+
+    function render() {
+      const groups = ["core", "network", "info"];
+      listRoot.innerHTML = groups.map(category => {
+        const items = eips.filter(eip => eip.category === category);
+        const meta = categoryMeta[category];
+        return `
+          <section class="category-section" data-section="${category}">
+            <div class="category-heading">
+              <h2>${meta.label}</h2>
+              <span>${meta.description}</span>
+            </div>
+            <div class="category-items">
+              ${items.map(renderEip).join("")}
+            </div>
+          </section>
+        `;
+      }).join("");
+
+      navRoot.innerHTML = groups.map(category => {
+        const meta = categoryMeta[category];
+        const items = eips.filter(eip => eip.category === category);
+        return `
+          <nav class="nav-group" data-nav-group="${category}" aria-label="${meta.label}">
+            <p class="nav-group-title" style="color:${meta.color}">${meta.label}</p>
+            <ul class="eip-nav">
+              ${items.map(eip => `<li data-nav-eip="${eip.id}"><a href="#eip-${eip.id}">EIP-${eip.id} · ${eip.titleZh}</a></li>`).join("")}
+            </ul>
+          </nav>
+        `;
+      }).join("") + `
+        <nav class="nav-group" data-nav-group="appendix" aria-label="附录">
+          <p class="nav-group-title" style="color:var(--info)">附录</p>
+          <ul class="eip-nav">
+            <li><a href="#appendix-1">附录 1 · GasUsed 计算</a></li>
+          </ul>
+        </nav>
+      `;
+
+      bindNavLinks();
+      applyFilter();
+    }
+
+    function renderEip(eip) {
+      const meta = categoryMeta[eip.category];
+      const analysisSearchText = (eip.analysis || "").replace(/<[^>]*>/g, " ");
+      const searchText = [eip.id, eip.title, eip.titleZh, eip.brief, eip.problem, eip.approach, analysisSearchText, ...eip.keywords].join(" ").toLowerCase();
+      return `
+        <details class="eip-card" id="eip-${eip.id}" data-eip="${eip.id}" data-category="${eip.category}" data-search="${searchText.replaceAll('"', '&quot;')}" style="--card-color:${meta.color}">
+          <summary>
+            <div class="eip-number">EIP-${eip.id}</div>
+            <div class="eip-title-wrap">
+              <h3>${eip.titleZh}</h3>
+              <p>${eip.brief}</p>
+            </div>
+            <div class="badges">
+              <span class="${badgeClass(eip.category)}">${meta.short}</span>
+              ${eip.headliner ? '<span class="badge badge-headliner">Headliner</span>' : ''}
+            </div>
+          </summary>
+          <div class="eip-body">
+            <div class="detail-grid">
+              <section class="detail-block">
+                <h4>要解决的问题（Motivation）</h4>
+                <p>${eip.problem}</p>
+              </section>
+              <section class="detail-block">
+                <h4>主要做法</h4>
+                <p>${eip.approach}</p>
+              </section>
+              ${eip.analysis ? `
+                <section class="detail-block full analysis-block">
+                  <h4>解析</h4>
+                  ${eip.analysis}
+                </section>
+              ` : ""}
+              <section class="detail-block full">
+                <h4>英文标题</h4>
+                <p>${eip.title}</p>
+              </section>
+            </div>
+            <div class="eip-footer">
+              <div class="keywords">${eip.keywords.map(keyword => `<span>${keyword}</span>`).join("")}</div>
+              <a class="source-link" href="https://eips.ethereum.org/EIPS/eip-${eip.id}" target="_blank" rel="noreferrer">打开官方 EIP</a>
+            </div>
+            <!-- DEEP_DIVE:EIP-${eip.id}:START -->
+            <!-- 后续深入研究内容追加在此处。 -->
+            <!-- DEEP_DIVE:EIP-${eip.id}:END -->
+          </div>
+        </details>
+      `;
+    }
+
+    function bindNavLinks() {
+      navRoot.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", event => {
+          const target = document.querySelector(link.getAttribute("href"));
+          if (!target || target.hidden) return;
+          event.preventDefault();
+          if (target.matches("details")) target.open = true;
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          history.replaceState(null, "", link.getAttribute("href"));
+        });
+      });
+    }
+
+    function normalize(value) {
+      return value.trim().toLowerCase();
+    }
+
+    function applyFilter() {
+      const query = normalize(searchInput.value);
+      let visibleCount = 0;
+
+      listRoot.querySelectorAll(".eip-card").forEach(card => {
+        const categoryMatch = activeFilter === "all" || card.dataset.category === activeFilter;
+        const searchMatch = !query || card.dataset.search.includes(query);
+        const visible = categoryMatch && searchMatch;
+        card.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+
+      document.querySelectorAll(".category-section").forEach(section => {
+        section.hidden = !section.querySelector(".eip-card:not([hidden])");
+      });
+
+      document.querySelectorAll("[data-nav-eip]").forEach(item => {
+        const card = document.querySelector(`[data-eip="${item.dataset.navEip}"]`);
+        item.hidden = !card || card.hidden;
+      });
+
+      document.querySelectorAll("[data-nav-group]").forEach(group => {
+        group.hidden = !group.querySelector("li:not([hidden])");
+      });
+
+      resultCount.textContent = String(visibleCount);
+      emptyState.style.display = visibleCount === 0 ? "block" : "none";
+    }
+
+    document.querySelectorAll("[data-filter]").forEach(button => {
+      button.addEventListener("click", () => {
+        activeFilter = button.dataset.filter;
+        document.querySelectorAll("[data-filter]").forEach(candidate => {
+          candidate.setAttribute("aria-pressed", String(candidate === button));
+        });
+        applyFilter();
+      });
+    });
+
+    searchInput.addEventListener("input", applyFilter);
+
+    document.getElementById("expand-all").addEventListener("click", () => {
+      document.querySelectorAll(".eip-card:not([hidden])").forEach(card => { card.open = true; });
+    });
+
+    document.getElementById("collapse-all").addEventListener("click", () => {
+      document.querySelectorAll(".eip-card").forEach(card => { card.open = false; });
+    });
+
+    render();
+
+    if (location.hash) {
+      const target = document.querySelector(location.hash);
+      if (target && target.matches("details")) target.open = true;
+    }
+  </script>
+</body>
+</html>
